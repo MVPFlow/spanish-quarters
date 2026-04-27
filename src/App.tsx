@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import Experience from "./components/Experience";
 import Overlay from "./components/Overlay";
@@ -9,11 +9,32 @@ function App() {
   const [view, setView] = useState<ViewState>("aerial");
   const [activeZone, setActiveZone] = useState<Zone | null>(null);
 
+  // Memorizamos la función de retroceso para usarla en el evento de teclado
+  const handleBackToMap = useCallback(() => {
+    if (view === "inside" || activeZone) {
+      setView("aerial");
+      setActiveZone(null);
+      console.log("Navegación: Regresando al mapa global");
+    }
+  }, [view, activeZone]);
+
   const handleEnterZone = () => setView("inside");
-  const handleBackToMap = () => {
-    setView("aerial");
-    setActiveZone(null);
-  };
+
+  // Listener para la tecla Escape
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleBackToMap();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    // Limpieza del evento al desmontar el componente
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleBackToMap]);
 
   return (
     <div className="container">
