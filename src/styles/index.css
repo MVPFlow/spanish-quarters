@@ -1,0 +1,101 @@
+:root {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.container {
+  width: 100vw;
+  height: 100vh;
+}
+
+.ui-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4rem;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-out {
+  opacity: 0;
+  transform: scale(1.1);
+}
+
+/* Hotspot Labels */
+.hotspot-label {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.hotspot-label.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Zone Info Panel */
+.zone-info {
+  pointer-events: all;
+  max-width: 400px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2rem;
+  border-left: 2px solid #ff3e00;
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.enter-btn {
+  margin-top: 1.5rem;
+  background: #ff3e00;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.hint {
+  align-self: center;
+  opacity: 0.5;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.footer-info {
+  font-size: 0.7rem;
+  opacity: 0.4;
+  letter-spacing: 2px;
+}
