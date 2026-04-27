@@ -1,36 +1,50 @@
-import { Zone } from "../App";
+import { Zone } from "../types";
 
 interface OverlayProps {
-  view: string;
+  view: "aerial" | "transitioning" | "inside";
   activeZone: Zone | null;
   onStart: () => void;
+  onBack: () => void;
 }
 
-const Overlay = ({ view, activeZone, onStart }: OverlayProps) => {
+const Overlay = ({ view, activeZone, onStart, onBack }: OverlayProps) => {
+  const isInside = view === "inside";
+
   return (
-    <div className={`ui-layer ${view !== "aerial" ? "fade-out" : ""}`}>
-      <header>
+    <div className={`ui-layer ${isInside ? "ui-minimal" : ""}`}>
+      <header className={isInside ? "hidden" : ""}>
         <h1>SPANISH QUARTER</h1>
-        <p>Explora la memoria de la ciudad</p>
+        <p>Experiencia de Memoria Cultural</p>
       </header>
 
-      {activeZone && (
-        <div className="zone-info">
+      {/* Info de zona y botón de entrada */}
+      {activeZone && !isInside && (
+        <div className="zone-panel">
           <h2>{activeZone.name}</h2>
           <p>{activeZone.description}</p>
-          <button className="enter-btn" onClick={onStart}>
-            ENTRAR EN LA ZONA
+          <button className="cta-btn primary" onClick={onStart}>
+            DESCUBRIR HISTORIA
           </button>
         </div>
       )}
 
-      {!activeZone && (
-        <div className="hint">
-          Selecciona un punto brillante en el mapa para comenzar
+      {/* Interfaz cuando ya estás "dentro" */}
+      {isInside && (
+        <div className="inside-ui">
+          <button className="cta-btn secondary" onClick={onBack}>
+            ← VOLVER AL MAPA
+          </button>
+          <div className="location-tag">
+            ZONA: <span>{activeZone?.name}</span>
+          </div>
         </div>
       )}
 
-      <div className="footer-info">FASE 2: SISTEMA DE INTERACCIÓN</div>
+      {!activeZone && !isInside && (
+        <div className="hint-text">
+          Explora el laberinto y selecciona un punto
+        </div>
+      )}
     </div>
   );
 };

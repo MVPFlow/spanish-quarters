@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Html } from "@react-three/drei";
-import { Zone } from "../App";
+import { Zone } from "../types";
 
 const ZONES: Zone[] = [
   {
