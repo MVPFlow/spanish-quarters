@@ -1,83 +1,124 @@
 import { useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import {
   OrbitControls,
+  PointerLockControls,
   PerspectiveCamera,
-  ContactShadows,
+  Stars,
   Sky,
 } from "@react-three/drei";
 import * as THREE from "three";
 import { City } from "./City";
+import { MemoryHallway } from "./MemoryHallway";
 import { Hotspots } from "./Hotspots";
-import { Zone } from "../types";
+import { Zone, ViewState } from "../types";
+import { useKeyboard } from "../hooks/useKeyboard";
 
 interface ExperienceProps {
-  view: "aerial" | "transitioning" | "inside";
+  view: ViewState;
   activeZone: Zone | null;
   onZoneSelect: (zone: Zone | null) => void;
 }
 
 const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
-  const { camera } = useThree();
-  const controlsRef = useRef<any>(null);
+  const isInside = view === "inside";
 
-  // Posiciones predefinidas
-  const AERIAL_POS = new THREE.Vector3(50, 50, 50);
-  const AERIAL_TARGET = new THREE.Vector3(0, 0, 0);
+  // Hook de teclado para WASD / Flechas
+  const { moveForward, moveBackward, moveLeft, moveRight } = useKeyboard();
+
+  // Referencias para la física simple del movimiento
+  const velocity = useRef(new THREE.Vector3());
+  const direction = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
-    let targetPos = AERIAL_POS;
-    let targetLookAt = AERIAL_TARGET;
-
-    if (view === "inside" && activeZone) {
-      // Calculamos una posición frente al hotspot
-      const [x, y, z] = activeZone.position;
-      targetPos = new THREE.Vector3(x + 5, y + 2, z + 10);
-      targetLookAt = new THREE.Vector3(x, y, z);
+    // --- VISTA AÉREA (MAPA GLOBAL) ---
+    if (!isInside) {
+      const targetPos = new THREE.Vector3(60, 60, 60);
+      state.camera.position.lerp(targetPos, delta * 2);
+      state.camera.lookAt(0, 0, 0);
+      return;
     }
 
-    // Suavizado de posición (Lerp)
-    state.camera.position.lerp(targetPos, delta * 2);
+    // --- VISTA INTERIOR (FIRST PERSON) ---
+    const speed = 25; // Ajusta la velocidad de caminata aquí
 
-    // Suavizado del objetivo de la cámara
-    if (controlsRef.current) {
-      controlsRef.current.target.lerp(targetLookAt, delta * 2);
-      controlsRef.current.update();
-    }
+    // Calculamos dirección basada en las teclas
+    // En Three.js, hacia adelante es -Z, por eso invertimos la lógica aquí:
+    direction.current.z = Number(moveBackward) - Number(moveForward);
+    direction.current.x = Number(moveRight) - Number(moveLeft);
+    direction.current.normalize();
+
+    // Aplicar velocidad con suavizado (delta para consistencia de frames)
+    if (moveForward || moveBackward)
+      velocity.current.z = direction.current.z * speed * delta;
+    if (moveLeft || moveRight)
+      velocity.current.x = direction.current.x * speed * delta;
+
+    // Traducir la cámara en su espacio local (hacia donde mira)
+    state.camera.translateX(velocity.current.x);
+    state.camera.translateZ(velocity.current.z);
+
+    // Fricción para que no deslice infinitamente
+    velocity.current.multiplyScalar(0.85);
+
+    // Bloqueo de altura y límites de las paredes del pasillo
+    state.camera.position.y = 1.7; // Altura de ojos fija
+    state.camera.position.x = THREE.MathUtils.clamp(
+      state.camera.position.x,
+      -4.2,
+      4.2,
+    );
+    state.camera.position.z = THREE.MathUtils.clamp(
+      state.camera.position.z,
+      -19,
+      19,
+    );
   });
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[50, 50, 50]} fov={45} />
+      <PerspectiveCamera makeDefault fov={45} />
 
-      <OrbitControls
-        ref={controlsRef}
-        makeDefault
-        enableDamping
-        dampingFactor={0.05}
-        minDistance={5}
-        maxDistance={120}
-        enabled={view !== "inside"} // Bloqueamos controles manuales durante el "zoom"
-      />
-
-      <ambientLight intensity={0.2} />
-      <directionalLight position={[-10, 20, 10]} intensity={1.5} castShadow />
-
-      <City />
-
-      {/* Solo mostramos hotspots si no estamos "dentro" de una zona */}
-      {view !== "inside" && (
-        <Hotspots onZoneSelect={onZoneSelect} activeZone={activeZone} />
+      {/* Selector de controles: Orbit para el mapa, PointerLock para el interior */}
+      {!isInside ? (
+        <OrbitControls
+          makeDefault
+          enablePan={false}
+          maxPolarAngle={Math.PI / 2.2}
+        />
+      ) : (
+        <PointerLockControls />
       )}
 
-      <Sky sunPosition={[100, 20, 100]} />
-      <ContactShadows
-        position={[0, 0, 0]}
-        opacity={0.4}
-        scale={100}
-        blur={2}
-        far={10}
-      />
+      {/* Iluminación Dinámica */}
+      <ambientLight intensity={0.6} />
+
+      {!isInside ? (
+        <group>
+          <directionalLight
+            position={[50, 50, 20]}
+            intensity={2.5}
+            castShadow
+          />
+          <Sky sunPosition={[100, 20, 100]} />
+          <City />
+          <Hotspots onZoneSelect={onZoneSelect} activeZone={activeZone} />
+        </group>
+      ) : (
+        <group>
+          {/* Ambiente de callejón con estrellas y luz de techo */}
+          <MemoryHallway />
+          <rectAreaLight
+            width={12}
+            height={40}
+            intensity={6}
+            position={[0, 9, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            color="#ffffff"
+          />
+          <Stars radius={50} count={3000} factor={4} fade speed={1} />
+        </group>
+      )}
     </>
   );
 };
