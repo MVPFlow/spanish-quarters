@@ -1,11 +1,10 @@
-import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useRef, useEffect, Suspense } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import {
-  OrbitControls,
   PointerLockControls,
+  OrbitControls,
   PerspectiveCamera,
-  Stars,
-  Sky,
+  Html,
 } from "@react-three/drei";
 import * as THREE from "three";
 import { City } from "./City";
@@ -21,17 +20,24 @@ interface ExperienceProps {
 }
 
 const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
+  const { camera } = useThree();
   const isInside = view === "inside";
+  const controlsRef = useRef<any>(null);
 
-  // Hook de teclado para WASD / Flechas
   const { moveForward, moveBackward, moveLeft, moveRight } = useKeyboard();
-
-  // Referencias para la física simple del movimiento
   const velocity = useRef(new THREE.Vector3());
   const direction = useRef(new THREE.Vector3());
 
+  // FIX CRÍTICO: Resetear la cámara al entrar para mirar al frente (no al piso)
+  useEffect(() => {
+    if (isInside) {
+      // Posicionamos la cámara al inicio y la obligamos a mirar al fondo del eje Z
+      camera.position.set(0, 1.7, 18);
+      camera.lookAt(0, 1.7, -100);
+    }
+  }, [isInside, camera]);
+
   useFrame((state, delta) => {
-    // --- VISTA AÉREA (MAPA GLOBAL) ---
     if (!isInside) {
       const targetPos = new THREE.Vector3(60, 60, 60);
       state.camera.position.lerp(targetPos, delta * 2);
@@ -39,34 +45,27 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
       return;
     }
 
-    // --- VISTA INTERIOR (FIRST PERSON) ---
-    const speed = 25; // Ajusta la velocidad de caminata aquí
-
-    // Calculamos dirección basada en las teclas
-    // En Three.js, hacia adelante es -Z, por eso invertimos la lógica aquí:
+    // Movimiento FPS
+    const speed = 25;
     direction.current.z = Number(moveBackward) - Number(moveForward);
     direction.current.x = Number(moveRight) - Number(moveLeft);
     direction.current.normalize();
 
-    // Aplicar velocidad con suavizado (delta para consistencia de frames)
     if (moveForward || moveBackward)
       velocity.current.z = direction.current.z * speed * delta;
     if (moveLeft || moveRight)
       velocity.current.x = direction.current.x * speed * delta;
 
-    // Traducir la cámara en su espacio local (hacia donde mira)
     state.camera.translateX(velocity.current.x);
     state.camera.translateZ(velocity.current.z);
-
-    // Fricción para que no deslice infinitamente
     velocity.current.multiplyScalar(0.85);
 
-    // Bloqueo de altura y límites de las paredes del pasillo
-    state.camera.position.y = 1.7; // Altura de ojos fija
+    // Mantener nivel de ojos y colisiones laterales
+    state.camera.position.y = 1.7;
     state.camera.position.x = THREE.MathUtils.clamp(
       state.camera.position.x,
-      -4.2,
-      4.2,
+      -4,
+      4,
     );
     state.camera.position.z = THREE.MathUtils.clamp(
       state.camera.position.z,
@@ -79,7 +78,6 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
     <>
       <PerspectiveCamera makeDefault fov={45} />
 
-      {/* Selector de controles: Orbit para el mapa, PointerLock para el interior */}
       {!isInside ? (
         <OrbitControls
           makeDefault
@@ -90,8 +88,7 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
         <PointerLockControls />
       )}
 
-      {/* Iluminación Dinámica */}
-      <ambientLight intensity={0.6} />
+      <ambientLight intensity={0.4} />
 
       {!isInside ? (
         <group>
@@ -100,23 +97,47 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
             intensity={2.5}
             castShadow
           />
-          <Sky sunPosition={[100, 20, 100]} />
           <City />
           <Hotspots onZoneSelect={onZoneSelect} activeZone={activeZone} />
         </group>
       ) : (
         <group>
-          {/* Ambiente de callejón con estrellas y luz de techo */}
-          <MemoryHallway />
+          {/* Atmósfera Urbana: Niebla y Luces de Ciudad */}
+          <fog attach="fog" args={["#050505", 5, 35]} />
+
+          <Suspense
+            fallback={
+              <Html center>
+                <div style={{ color: "white" }}>CARGANDO...</div>
+              </Html>
+            }
+          >
+            <MemoryHallway />
+          </Suspense>
+
+          {/* Luz principal del callejón */}
           <rectAreaLight
-            width={12}
+            width={10}
             height={40}
-            intensity={6}
+            intensity={10}
             position={[0, 9, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
             color="#ffffff"
           />
-          <Stars radius={50} count={3000} factor={4} fade speed={1} />
+
+          {/* Luces de ciudad distantes para dar profundidad */}
+          <pointLight
+            position={[30, 20, -40]}
+            intensity={20}
+            color="#ffaa00"
+            distance={100}
+          />
+          <pointLight
+            position={[-30, 15, -40]}
+            intensity={15}
+            color="#0055ff"
+            distance={100}
+          />
         </group>
       )}
     </>

@@ -1,39 +1,77 @@
-import { useMemo } from "react";
-import * as THREE from "three";
+import { MemoryFrame } from "./MemoryFrame";
+import { MemoryMedia } from "../types";
+
+const SAMPLE_MEMORIES: MemoryMedia[] = [
+  {
+    id: "m1",
+    title: "Callejón de la Luz",
+    url: "https://picsum.photos/id/1015/800/600",
+    position: [-4.7, 2.5, -12],
+    rotation: [0, Math.PI / 2, 0],
+    description: "",
+  },
+  {
+    id: "m2",
+    title: "Estructuras",
+    url: "https://picsum.photos/id/1016/800/600",
+    position: [-4.7, 2.5, 0],
+    rotation: [0, Math.PI / 2, 0],
+    description: "",
+  },
+  {
+    id: "m3",
+    title: "Murales",
+    url: "https://picsum.photos/id/1018/800/600",
+    position: [4.7, 2.5, -6],
+    rotation: [0, -Math.PI / 2, 0],
+    description: "",
+  },
+  {
+    id: "m4",
+    title: "Tradiciones",
+    url: "https://picsum.photos/id/1019/800/600",
+    position: [4.7, 2.5, 10],
+    rotation: [0, -Math.PI / 2, 0],
+    description: "",
+  },
+];
 
 export const MemoryHallway = () => {
-  const wallWidth = 40;
-  const wallHeight = 10;
-
   return (
     <group>
-      {/* Suelo del callejón - Estilo adoquines oscuros */}
+      {/* Suelo oscuro con ligero reflejo */}
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[10, wallWidth]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.8} />
+        <planeGeometry args={[12, 50]} />
+        <meshStandardMaterial color="#080808" roughness={0.5} metalness={0.2} />
       </mesh>
 
-      {/* Pared Izquierda */}
-      <mesh position={[-5, wallHeight / 2, 0]} receiveShadow castShadow>
-        <boxGeometry args={[0.5, wallHeight, wallWidth]} />
-        <meshStandardMaterial color="#2a2a2a" />
+      {/* Paredes del callejón */}
+      <mesh position={[-5, 5, 0]} receiveShadow>
+        <boxGeometry args={[0.2, 10, 50]} />
+        <meshStandardMaterial color="#151515" />
+      </mesh>
+      <mesh position={[5, 5, 0]} receiveShadow>
+        <boxGeometry args={[0.2, 10, 50]} />
+        <meshStandardMaterial color="#151515" />
       </mesh>
 
-      {/* Pared Derecha */}
-      <mesh position={[5, wallHeight / 2, 0]} receiveShadow castShadow>
-        <boxGeometry args={[0.5, wallHeight, wallWidth]} />
-        <meshStandardMaterial color="#2a2a2a" />
-      </mesh>
-
-      {/* Luces puntuales tipo farolas */}
+      {/* Farolas de pared */}
       {[-15, -5, 5, 15].map((z, i) => (
-        <pointLight
-          key={i}
-          position={[0, 4, z]}
-          intensity={5}
-          color="#ffaa44"
-          distance={10}
-        />
+        <group
+          key={`hall-light-${i}`}
+          position={[i % 2 === 0 ? -4.6 : 4.6, 3.5, z]}
+        >
+          <pointLight intensity={12} distance={12} color="#ffcc88" />
+          <mesh>
+            <sphereGeometry args={[0.08, 16, 16]} />
+            <meshBasicMaterial color="#ffcc88" />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Renderizado de los marcos de fotos */}
+      {SAMPLE_MEMORIES.map((m) => (
+        <MemoryFrame key={m.id} data={m} />
       ))}
     </group>
   );
