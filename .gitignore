@@ -47,3 +47,5 @@ desktop.ini
 
 # --- VITE ---
 .vite/
+
+*.zip

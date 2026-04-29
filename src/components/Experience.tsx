@@ -7,9 +7,8 @@ import {
   Html,
 } from "@react-three/drei";
 import * as THREE from "three";
-import { City } from "./City";
 import { MemoryHallway } from "./MemoryHallway";
-import { Hotspots } from "./Hotspots";
+import { InteractiveCity } from "./InteractiveCity";
 import { Zone, ViewState } from "../types";
 import { useKeyboard } from "../hooks/useKeyboard";
 
@@ -17,9 +16,30 @@ interface ExperienceProps {
   view: ViewState;
   activeZone: Zone | null;
   onZoneSelect: (zone: Zone | null) => void;
+  onCenterMap: number;
+  onZonesChange: (zones: Zone[]) => void;
+  audioMuted: boolean;
+  audioUnlocked: boolean;
+  mobileInput: {
+    moveForward: boolean;
+    moveBackward: boolean;
+    moveLeft: boolean;
+    moveRight: boolean;
+    turnLeft: boolean;
+    turnRight: boolean;
+  };
 }
 
-const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
+const Experience = ({
+  view,
+  activeZone,
+  onZoneSelect,
+  onCenterMap,
+  onZonesChange,
+  audioMuted,
+  audioUnlocked,
+  mobileInput,
+}: ExperienceProps) => {
   const { camera } = useThree();
   const isInside = view === "inside";
   const controlsRef = useRef<any>(null);
@@ -37,23 +57,45 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
     }
   }, [isInside, camera]);
 
+  useEffect(() => {
+    if (isInside) return;
+    camera.position.set(50, 50, 50);
+    camera.lookAt(0, 0, 0);
+    if (controlsRef.current) {
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  }, [onCenterMap, isInside, camera]);
+
   useFrame((state, delta) => {
     if (!isInside) {
-      const targetPos = new THREE.Vector3(60, 60, 60);
-      state.camera.position.lerp(targetPos, delta * 2);
-      state.camera.lookAt(0, 0, 0);
       return;
     }
 
+    const isFeaturedMemory = activeZone?.id === "poi_spanish_quarter_memory";
+    const lateralLimit = isFeaturedMemory ? 5.2 : 4;
+    const depthLimit = isFeaturedMemory ? 170 : 19;
+
     // Movimiento FPS
     const speed = 25;
-    direction.current.z = Number(moveBackward) - Number(moveForward);
-    direction.current.x = Number(moveRight) - Number(moveLeft);
+    const forward = moveForward || mobileInput.moveForward;
+    const backward = moveBackward || mobileInput.moveBackward;
+    const left = moveLeft || mobileInput.moveLeft;
+    const right = moveRight || mobileInput.moveRight;
+    const turnLeft = mobileInput.turnLeft;
+    const turnRight = mobileInput.turnRight;
+
+    if (turnLeft || turnRight) {
+      state.camera.rotation.y += (turnRight ? -1 : 1) * delta * 1.2;
+    }
+
+    direction.current.z = Number(backward) - Number(forward);
+    direction.current.x = Number(right) - Number(left);
     direction.current.normalize();
 
-    if (moveForward || moveBackward)
+    if (forward || backward)
       velocity.current.z = direction.current.z * speed * delta;
-    if (moveLeft || moveRight)
+    if (left || right)
       velocity.current.x = direction.current.x * speed * delta;
 
     state.camera.translateX(velocity.current.x);
@@ -64,13 +106,13 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
     state.camera.position.y = 1.7;
     state.camera.position.x = THREE.MathUtils.clamp(
       state.camera.position.x,
-      -4,
-      4,
+      -lateralLimit,
+      lateralLimit,
     );
     state.camera.position.z = THREE.MathUtils.clamp(
       state.camera.position.z,
-      -19,
-      19,
+      -depthLimit,
+      depthLimit,
     );
   });
 
@@ -81,6 +123,7 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
       {!isInside ? (
         <OrbitControls
           makeDefault
+          ref={controlsRef}
           enablePan={false}
           maxPolarAngle={Math.PI / 2.2}
         />
@@ -97,8 +140,11 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
             intensity={2.5}
             castShadow
           />
-          <City />
-          <Hotspots onZoneSelect={onZoneSelect} activeZone={activeZone} />
+          <InteractiveCity
+            onZoneSelect={onZoneSelect}
+            activeZone={activeZone}
+            onZonesChange={onZonesChange}
+          />
         </group>
       ) : (
         <group>
@@ -108,11 +154,15 @@ const Experience = ({ view, activeZone, onZoneSelect }: ExperienceProps) => {
           <Suspense
             fallback={
               <Html center>
-                <div style={{ color: "white" }}>CARGANDO...</div>
+                <div style={{ color: "white" }}>CARICAMENTO...</div>
               </Html>
             }
           >
-            <MemoryHallway />
+            <MemoryHallway
+              activeZone={activeZone}
+              muted={audioMuted}
+              unlocked={audioUnlocked}
+            />
           </Suspense>
 
           {/* Luz principal del callejón */}

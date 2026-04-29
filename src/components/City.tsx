@@ -1,37 +1,40 @@
 import { useMemo } from "react";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
+const CITY_MODEL_URL = "/models/quartieri_spagnoli_interactive.glb";
+const CITY_SCALE = 0.35;
+
 export const City = () => {
-  const count = 400; // Densidad de edificios
+  const gltf = useGLTF(CITY_MODEL_URL);
 
-  const buildings = useMemo(() => {
-    const temp = [];
-    for (let i = 0; i < count; i++) {
-      const x = (Math.random() - 0.5) * 80;
-      const z = (Math.random() - 0.5) * 80;
-      const h = Math.random() * 5 + 1;
-      const w = Math.random() * 2 + 1;
+  const scene = useMemo(() => {
+    gltf.scene.traverse((object) => {
+      const mesh = object as THREE.Object3D & {
+        castShadow?: boolean;
+        receiveShadow?: boolean;
+        userData: { interactive?: boolean };
+      };
 
-      temp.push({ position: [x, h / 2, z], args: [w, h, w] });
-    }
-    return temp;
-  }, []);
+      if (mesh.name === "city_base") {
+        mesh.receiveShadow = true;
+      }
+
+      if (mesh.name.startsWith("poi_qs_")) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.userData.interactive = true;
+      }
+    });
+
+    return gltf.scene;
+  }, [gltf.scene]);
 
   return (
-    <group>
-      {/* Suelo base */}
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#222" />
-      </mesh>
-
-      {/* Edificios procedurales */}
-      {buildings.map((props, i) => (
-        <mesh key={i} position={props.position as any} castShadow receiveShadow>
-          <boxGeometry args={props.args as any} />
-          <meshStandardMaterial color="#444" />
-        </mesh>
-      ))}
+    <group scale={CITY_SCALE}>
+      <primitive object={scene} />
     </group>
   );
 };
+
+useGLTF.preload(CITY_MODEL_URL);

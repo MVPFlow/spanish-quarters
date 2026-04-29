@@ -3,6 +3,9 @@ export interface Zone {
   name: string;
   description: string;
   position: [number, number, number];
+  type?: "memory" | "poi";
+  featured?: boolean;
+  district?: string;
 }
 
 export interface MemoryMedia {
