@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Zone, ViewState } from "../types";
 
-const MAP_AUDIO_URL = "/audio/Voci_sul_selciato.mp3";
+const MAP_AUDIO_URL = "/audio/leberch-documentary-cinematic-241576.mp3";
 const MAP_VOLUME = 0.16;
 
 interface AudioManagerProps {

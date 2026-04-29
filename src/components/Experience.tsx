@@ -12,6 +12,8 @@ import { InteractiveCity } from "./InteractiveCity";
 import { Zone, ViewState } from "../types";
 import { useKeyboard } from "../hooks/useKeyboard";
 
+const SPECIAL_MEMORY_ID = "poi_spanish_quarter_memory";
+
 interface ExperienceProps {
   view: ViewState;
   activeZone: Zone | null;
@@ -47,6 +49,7 @@ const Experience = ({
   const { moveForward, moveBackward, moveLeft, moveRight } = useKeyboard();
   const velocity = useRef(new THREE.Vector3());
   const direction = useRef(new THREE.Vector3());
+  const isFeaturedMemory = activeZone?.id === SPECIAL_MEMORY_ID;
 
   // FIX CRÍTICO: Resetear la cámara al entrar para mirar al frente (no al piso)
   useEffect(() => {
@@ -72,7 +75,6 @@ const Experience = ({
       return;
     }
 
-    const isFeaturedMemory = activeZone?.id === "poi_spanish_quarter_memory";
     const lateralLimit = isFeaturedMemory ? 5.2 : 4;
     const depthLimit = isFeaturedMemory ? 170 : 19;
 
@@ -160,6 +162,7 @@ const Experience = ({
           >
             <MemoryHallway
               activeZone={activeZone}
+              isSpecialMemory={isFeaturedMemory}
               muted={audioMuted}
               unlocked={audioUnlocked}
             />
