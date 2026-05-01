@@ -136,8 +136,11 @@ export const MemoryHallway = ({
 
     const startZ = -hallwayLength / 2 + 10;
     return mediaAssets.map((asset, index) => {
-      const x = index % 2 === 0 ? -4.7 : 4.7;
-      const z = startZ + index * SPECIAL_HALLWAY_SPACING;
+      const isLastMedia = index === mediaAssets.length - 1;
+      const x = isLastMedia ? 4.7 : index % 2 === 0 ? -4.7 : 4.7;
+      const z = isLastMedia
+        ? hallwayLength / 2 - 8
+        : startZ + index * SPECIAL_HALLWAY_SPACING;
       return {
         id: `${asset.title}-${index}`,
         title: asset.title,

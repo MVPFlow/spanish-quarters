@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { AudioManager } from "./components/AudioManager";
 import { HelpOverlay } from "./components/HelpOverlay";
+import { GlobalLoader } from "./components/GlobalLoader";
 import Experience from "./components/Experience";
 import Overlay from "./components/Overlay";
 import { Zone, ViewState } from "./types";
@@ -85,8 +86,9 @@ function App() {
           toneMappingExposure: 1.35,
           outputColorSpace: THREE.SRGBColorSpace,
         }}
-      >
+        >
         <color attach="background" args={["#050505"]} />
+        <GlobalLoader />
         <AudioManager
           view={view}
           activeZone={activeZone}

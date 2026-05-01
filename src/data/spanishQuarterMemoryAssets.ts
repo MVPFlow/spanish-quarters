@@ -72,4 +72,5 @@ export const SPANISH_MEMORY_ASSETS: MemoryAsset[] = [
   { type: "image", src: "/assets/sala.jpg", title: "sala" },
   { type: "image", src: "/assets/TT.jpg", title: "TT" },
   { type: "image", src: "/assets/TTT.jpg", title: "TTT" },
+  { type: "video", src: "/assets/quarters-memory.mp4", title: "quarters-memory" },
 ];

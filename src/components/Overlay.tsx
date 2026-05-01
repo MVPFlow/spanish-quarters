@@ -26,6 +26,8 @@ interface OverlayProps {
   onToggleHelp: () => void;
 }
 
+const WORKSHOP_VIDEO_URL = "/assets/quarters-memory.mp4";
+
 const Overlay = ({
   view,
   activeZone,
@@ -44,6 +46,7 @@ const Overlay = ({
   const isInside = view === "inside";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileHelpOpen, setIsMobileHelpOpen] = useState(false);
+  const [isWorkshopVideoOpen, setIsWorkshopVideoOpen] = useState(false);
 
   const sortedZones = useMemo(
     () =>
@@ -123,6 +126,16 @@ const Overlay = ({
                       {zone.featured && <strong>IN EVIDENZA</strong>}
                     </button>
                   ))}
+                  <button
+                    className="zones-menu__item zones-menu__item--video"
+                    onClick={() => {
+                      setIsWorkshopVideoOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <span>Accesso diretto al video del laboratorio</span>
+                    <strong>VIDEO COMPLETO</strong>
+                  </button>
                 </div>
               </div>
             )}
@@ -200,6 +213,19 @@ const Overlay = ({
         </div>
       )}
 
+      {!isInside && (
+        <footer className="main-footer">
+          <span>2026 made with love by </span>
+          <a
+            href="https://github.com/theghost1980"
+            target="_blank"
+            rel="noreferrer"
+          >
+            theghost1980
+          </a>
+        </footer>
+      )}
+
       {!isInside && isMenuOpen && (
         <div className="zones-menu">
           <div className="zones-menu__header">
@@ -224,6 +250,39 @@ const Overlay = ({
                 {zone.featured && <strong>IN EVIDENZA</strong>}
               </button>
             ))}
+            <button
+              className="zones-menu__item zones-menu__item--video"
+              onClick={() => {
+                setIsWorkshopVideoOpen(true);
+                setIsMenuOpen(false);
+              }}
+            >
+              <span>Accesso diretto al video del laboratorio</span>
+              <strong>VIDEO COMPLETO</strong>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isWorkshopVideoOpen && (
+        <div className="workshop-video-modal" onClick={() => setIsWorkshopVideoOpen(false)}>
+          <div className="workshop-video-modal__panel" onClick={(e) => e.stopPropagation()}>
+            <div className="workshop-video-modal__header">
+              <h3>Video del laboratorio</h3>
+              <button
+                className="zones-menu__close"
+                onClick={() => setIsWorkshopVideoOpen(false)}
+              >
+                Chiudi
+              </button>
+            </div>
+            <video
+              className="workshop-video-modal__video"
+              src={WORKSHOP_VIDEO_URL}
+              controls
+              autoPlay
+              playsInline
+            />
           </div>
         </div>
       )}
